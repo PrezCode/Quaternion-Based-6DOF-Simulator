@@ -8,10 +8,12 @@
 #include <fstream>
 #include <iomanip>
 #include <string>
+#include <chrono>
 #include "computers/QuaternionSimulation.hpp"
 #include "models/NASA_ISS_B17.hpp"
 
 void printInitialState(double* state){
+        std::cout << std::endl;
         std::cout << std::setw(10) << " " 
         << std::setw(10) << "Xe" << std::setw(10) << "Ye" << std::setw(10) << "Ze" << std::setw(10) << "Ue" << std::setw(10) << "Ve" << std::setw(10) << "We" 
         << std::setw(10) << "P" << std::setw(10) << "Q" << std::setw(10) << "R"<< std::setw(10) << "Phi" << std::setw(10) << "Theta" << std::setw(10) << "Psi" 
@@ -22,18 +24,17 @@ void printInitialState(double* state){
 }
 
 int main(){
+    auto start = std::chrono::system_clock::now();
     std::ofstream dataOut("MATLAB/Object_Simulation_Data.txt");
     std::array<double, 27> modelData{0.0};
     std::array<double, 12> finalState{0.0};
-    std::string initial, final;
-    Atmosphere air;
     double dt{0.01}, r2d{180.0/M_PI}, d2r{M_PI/180.0}, m2ft{3.28084}, ft2m{0.3048},
-    initialState[12]{-4315967.74, 960356.20, 5167269.53, 129.091037, -7491.513855, 1452.515654, 0*d2r, -0.065*d2r, 0*d2r, 0*d2r, -11.60*d2r, 0*d2r};//Xe, Ye, Ze, Ue, Ve, We, P, Q, R, Phi, Theta, Psi
-    int simEnd{6300}, simTimer{0};
+    initialState[12]{-4315967.74, 960356.20, 5167269.53, 129.091037, -7491.513855, 1452.515654, 0*d2r, 0.0*d2r, 0*d2r, 0*d2r, 0.0*d2r, 0*d2r};//Xe, Ye, Ze, Ue, Ve, We, P, Q, R, Phi, Theta, Psi; if using latlong, XY = LatLong, Z = Alt above sea level
+    int simEnd{5600}, simTimer{0};
     //Create and upload model
     InternationalSpaceStation ISS;
     ISS.getModel(modelData);
-    QuaternionSimulator testObject(modelData, ObjectType::Miscellaneous, Earth::Spherical, Gravity::Calculated);
+    QuaternionSimulator testObject(modelData, ObjectType::Miscellaneous, Earth::Spherical, CoordinateInput::Cartesian);
     testObject.setState(initialState);
     //Display initial state
     printInitialState(initialState);
@@ -45,12 +46,16 @@ int main(){
         dataOut << simTimer*dt << " ";
         for(int i = 0; i < 12; ++i){dataOut << finalState[i] << " ";}
         dataOut << std::endl;
-        if(abs(finalState[2]) < 0.0){break;}
+        if(abs(finalState[2]) < 0.0){break;}    //to stop sim if it hits surface on flat earth
+        //if(sqrt(finalState[0]*finalState[0] + finalState[1]*finalState[1] + finalState[2]*finalState[2]) < 6371008.2){break;} //To stop sim if it hits spherical earth surface
         simTimer++;
     }
     //Print final state
+    auto end = std::chrono::system_clock::now();
+    std::chrono::duration<double> runtime = end - start;
     std::cout << std::setw(10) << "Final: ";
     for(int value : finalState){std::cout << std::setw(10) << value << " ";}
-    std::cout << "\nSim Runtime: " << simTimer*dt << " seconds";
+    std::cout << "\nSim Runtime: " << simTimer*dt << " seconds" 
+        << "\nReal Runtime: " << runtime.count() << std::endl;
     return 0;
 }
