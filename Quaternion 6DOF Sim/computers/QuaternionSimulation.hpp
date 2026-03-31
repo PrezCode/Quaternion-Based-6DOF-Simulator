@@ -1,5 +1,6 @@
-
+//Written by Prez, https://github.com/PrezCode
 //Formulas from https://apps.dtic.mil/sti/tr/pdf/ADA417259.pdf and "Missile Guidance and Control Systems" by George M. Siouris
+//All code created without the use of AI
 #pragma once
 #include <iostream>
 #include <cmath>
@@ -9,16 +10,17 @@
 enum Variables{X = 0, Y = 1, Z = 2, U = 0, V = 1, W = 2, P = 0, Q = 1, R = 2, L = 0, M = 1, N = 2};
 enum ObjectType{Missile, Aircraft, Miscellaneous};
 enum Earth{Flat, Spherical};
-enum Gravity{Constant, Calculated};
+enum CoordinateInput{Cartesian, LatLong};
 class QuaternionSimulator{
     public:
-    QuaternionSimulator(std::array<double, 27>& model, ObjectType object, Earth shape, Gravity gEstimate){
+    QuaternionSimulator(std::array<double, 27>& model, ObjectType object, Earth shape, CoordinateInput coordType){
+        std::cout << "Quaternion 6DOF Simulation:" << std::endl;
         if(object == Missile || object == Aircraft){isMiscellanous = false;}
             else if(object == Miscellaneous){isMiscellanous = true;}
-        if(shape == Flat){flatEarth = true;}
-            else if(shape == Spherical){flatEarth = false;}
-        if(gEstimate == Constant){constantGravity = true;}
-            else if(gEstimate == Calculated){constantGravity = false;}
+        if(shape == Flat){flatEarth = true; std::cout << "Flat Earth ON" << std::endl;}
+            else if(shape == Spherical){flatEarth = false; std::cout << "Flat Earth OFF" << std::endl;}
+        if(coordType == Cartesian){isCartesian = true; std::cout << "Cartesian ON" << std::endl;}
+            else if(coordType == LatLong){isCartesian = false; std::cout << "Cartesian OFF" << std::endl;}
         I[X][X] = model[0];
         I[Y][Y] = model[1];
         I[Z][Z] = model[2];
@@ -50,10 +52,16 @@ class QuaternionSimulator{
     void setState(double* initials){
         for(int i = 0; i < 12; ++i){state[i] = initials[i];}
         if(flatEarth == true){state[2] = -state[2];}    //forces NED coordinates
-            else if(flatEarth == false){convertCartesionToECEF();}
+            else if((flatEarth == false) && (isCartesian == true)){convertCartesionToECEF();}
+            else if((flatEarth == false) && (isCartesian == false)){
+                for(int i = 0; i < 3; ++i){latlong[i] = state[i];}
+                convertECEFtoCartesion();
+                for(int i = 0; i < 3; ++i){state[i] = cartesian[i];}
+            }
     }
     void getState(std::array<double, 12>& outStates){
         for(int i = 0; i < 12; ++i){outStates[i] = state[i];}
+        if(flatEarth == true){outStates[2] = -outStates[2];}
         outStates[3] = V_e[X];
         outStates[4] = V_e[Y];
         outStates[5] = V_e[Z];
@@ -132,6 +140,8 @@ class QuaternionSimulator{
         //std::cout << "Initialized quaternion magnitude sum: " << quatCheck << std::endl;
     }
     void generateForces(){
+        if(flatEarth == false){g = -generateGravity();}
+            else if(flatEarth == true){g = gStandard;}
         double qBar = 0.5*fluid.getAirDensity()*Vmag_b*Vmag_b;
         if(isMiscellanous == false){generateMachDrag(Vmag_b/fluid.getSoundBarrier(), qBar);}
         lift = C_lift*qBar*A_ref;
@@ -160,7 +170,7 @@ class QuaternionSimulator{
         phi = state[9];
         theta = state[10];
         psi = state[11];
-        convertCartesionToECEF();
+        if(flatEarth == false){convertCartesionToECEF();}
     }
     void generateAirData(){
         Vmag_b = sqrt(V_b[U]*V_b[U] + V_b[V]*V_b[V] + V_b[W]*V_b[W]);
@@ -175,9 +185,6 @@ class QuaternionSimulator{
         gamma = atan2(-1.0*V_e[W], sqrt(V_e[U]*V_e[U] + V_e[V]*V_e[V]));
     }
     void generateStateDerivatives(){
-        if(constantGravity == false){g = -generateGravity();}
-            else if(constantGravity == true){g = gStandard;}
-            
         if(flatEarth == true){
             //Displacement Velocity
             derivative[0] = C_bn[0][0]*V_b[U] + C_bn[1][0]*V_b[V] + C_bn[2][0]*V_b[W];
@@ -198,7 +205,6 @@ class QuaternionSimulator{
             derivative[4] = -mu/pow(cartesian[X]*cartesian[X] + cartesian[Y]*cartesian[Y] + cartesian[Z]*cartesian[Z], 1.5)*cartesian[Y];
             derivative[5] = -mu/pow(cartesian[X]*cartesian[X] + cartesian[Y]*cartesian[Y] + cartesian[Z]*cartesian[Z], 1.5)*cartesian[Z];
         }   
-        
         //Rotation Accelerations
         derivative[6] = (I[X][Z]*(I[X][X] - I[Y][Y] + I[Z][Z])*omega[P]*omega[Q] - (I[Z][Z]*(I[Z][Z] - I[Y][Y]) + I[X][Z]*I[X][Z])*omega[Q]*omega[R] + I[Z][Z]*moment[L] + I[X][Z]*moment[N])/(I[X][X]*I[Z][Z] - I[X][Z]*I[X][Z]);
         derivative[7] = ((I[Z][Z] - I[X][X])*omega[R]*omega[P] - I[X][Z]*(omega[P]*omega[P] - omega[R]*omega[R]) + moment[M])/I[Y][Y];
@@ -209,9 +215,9 @@ class QuaternionSimulator{
         derivative[11] = (sin(phi)/cos(theta))*omega[Q] + (cos(phi)/cos(theta))*omega[R];
     }
     void generateEarthVelocities(){
-        V_e[X] = C_eb[0][0]*V_b[U] + C_eb[1][0]*V_b[V] + C_eb[2][0]*V_b[W];
-        V_e[Y] = C_eb[0][1]*V_b[U] + C_eb[1][1]*V_b[V] + C_eb[2][1]*V_b[W];
-        V_e[X] = C_eb[0][2]*V_b[U] + C_eb[1][2]*V_b[V] + C_eb[2][2]*V_b[W];
+        V_e[X] = C_bn[0][0]*V_b[U] + C_bn[1][0]*V_b[V] + C_bn[2][0]*V_b[W];
+        V_e[Y] = C_bn[0][1]*V_b[U] + C_bn[1][1]*V_b[V] + C_bn[2][1]*V_b[W];
+        V_e[Z] = C_bn[0][2]*V_b[U] + C_bn[1][2]*V_b[V] + C_bn[2][2]*V_b[W];
     }
     void generateAngularDeltas(double dt){
         deltaPhi  = omega[P]*dt;
@@ -233,7 +239,6 @@ class QuaternionSimulator{
     void generateNormalizedQuaternions(){
         double normalizer = 0.5*(3.0 - quat[0]*quat[0] - quat[1]*quat[1] - quat[2]*quat[2] - quat[3]*quat[3]);
         for(int i = 0; i < 4; ++i){quat[i] *= normalizer;}
-
     } 
     void generateDCM(){
         //earth-to-body
@@ -304,8 +309,8 @@ class QuaternionSimulator{
     double generateGravity(){return (G_constant*mass*massEarth)/pow(latlong[Z] + radiusEarth, 2.0);}
     Atmosphere fluid;
     std::array<double, 12> state{0.0};
-    bool isMiscellanous, constantGravity, flatEarth;
-    double quat[4]{0.0}, quatDeriv[4]{0.0}, mass{0.0}, massEarth{5.9722E24/*kg*/}, radiusEarth{6371008.2/*m*/}, derivative[12]{0.0}, 
+    bool isMiscellanous, flatEarth, isCartesian;
+    double quat[4]{0.0}, quatDeriv[4]{0.0}, mass{0.0}, massEarth{5.9722E24/*kg*/}, radiusEarth{6371008.2/*m*/}, earthRotation{7292115.0E-11/*rad/s*/}, derivative[12]{0.0}, 
     phi{0.0}, theta{0.0}, psi{0.0}, deltaPhi{0.0}, deltaTheta{0.0}, deltaPsi{0.0}, Cn{0.0}, Sn{0.0}, cartesian[3]{0.0}, latlong[3]{0.0},
     C_eb[3][3]{0.0}, C_bn[3][3]{0.0}, C_wb[3][3]{0.0}, C_lift{0.0}, C_drag{0.0}, C_sideforce{0.0},  
     V_b[3]{0.0}, Vmag_b{0.0}, V_e[3]{0.0}, Vmag_e{0.0},
