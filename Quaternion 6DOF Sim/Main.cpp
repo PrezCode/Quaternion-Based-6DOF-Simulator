@@ -28,7 +28,7 @@ int main(){
     std::string initial, final;
     Atmosphere air;
     double dt{0.01}, r2d{180.0/M_PI}, d2r{M_PI/180.0}, m2ft{3.28084}, ft2m{0.3048},
-    initialState[12]{-4315967.74, 960356.20, 5167269.53, 129.091037, -7491.513855, 1452.515654, 0*d2r, -0.065*d2r, 0*d2r, 0*d2r, -11.60*d2r, 0*d2r};//Xe, Ye, Ze, Ue, Ve, We, P, Q, R, Phi, Theta, Psi; if spherical Earth, use decimal Lat-Long for X and Y
+    initialState[12]{-4315967.74, 960356.20, 5167269.53, 129.091037, -7491.513855, 1452.515654, 0*d2r, -0.065*d2r, 0*d2r, 0*d2r, -11.60*d2r, 0*d2r};//Xe, Ye, Ze, Ue, Ve, We, P, Q, R, Phi, Theta, Psi
     int simEnd{6300}, simTimer{0};
     //Create and upload model
     InternationalSpaceStation ISS;
