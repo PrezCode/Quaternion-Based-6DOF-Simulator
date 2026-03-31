@@ -1,3 +1,5 @@
+//Written by Prez, https://github.com/PrezCode
+//All code created without the use of AI
 //Main file to test quaternion based simulator.
 //Assume all values should be converted to metric and radians
 #include <iostream>
@@ -52,4 +54,3 @@ int main(){
     std::cout << "\nSim Runtime: " << simTimer*dt << " seconds";
     return 0;
 }
-//To-Do: Get motion to work. All data transfers are working, but model is not moving.
