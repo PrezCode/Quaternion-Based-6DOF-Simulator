@@ -1,0 +1,13 @@
+build/
+*.exe
+*.o
+*.out
+*.a
+*.so
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.svg
+matlab/Object_Simulation_Data.txt
+.vs

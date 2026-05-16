@@ -7,3 +7,31 @@ Things not currently modeled:
 - Advanced simulation of aerodynamic surfaces
 - Powered Flight
 - Controlled Flight
+
+## Dependencies
+
+- CMake 3.16+
+- A C++26-compatible compiler (GCC 15+ or Clang 21+)
+- clangd 21+ (optional, for IDE support)
+- clang-format / clang-tidy (optional, for formatting and static analysis)
+
+### Linux (Ubuntu)
+```bash
+sudo apt install cmake g++ clangd clang-format clang-tidy
+```
+
+### Windows
+
+Install [Visual Studio](https://visualstudio.microsoft.com/) with the **Desktop development with C++** workload — CMake support is included.
+
+## Building
+
+### Linux
+```bash
+cmake -B build
+cmake --build build
+./build/QuaternionSim
+```
+
+### Windows
+Open the project folder directly in Visual Studio (`File > Open > Folder`). It will detect `CMakeLists.txt` and configure automatically. Use the build button or `Ctrl+Shift+B` to build.
