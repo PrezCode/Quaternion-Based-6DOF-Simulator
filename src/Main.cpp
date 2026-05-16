@@ -13,6 +13,7 @@
 #include "computers/QuaternionSimulation.hpp"
 #include "models/NASA_ISS_B17.hpp"
 #include "models/NASA_Brick_B13.hpp"
+#include <numbers>
 
 void printInitialState(std::array<double, 12> state){
         std::cout << std::endl;
@@ -33,7 +34,7 @@ int main(){
     std::filesystem::create_directories("matlab");
     std::ofstream dataOut("matlab/Object_Simulation_Data.txt");
     std::array<double, 12> finalState{0.0};
-    double dt{0.01}, r2d{180.0/M_PI}, d2r{M_PI/180.0}, m2ft{3.28084}, ft2m{0.3048};
+    double dt {0.01}, r2d {180.0 / std::numbers::pi}, d2r {std::numbers::pi / 180.0}, m2ft {3.28084}, ft2m {0.3048};
     std::array<double, 12>  initialState = {-4315967.74, 960356.20, 5167269.53, 129.091037, -7491.513855, 1452.515654, 0*d2r, 0.0*d2r, 0*d2r, 0*d2r, 0.0*d2r, 0*d2r};//Xe, Ye, Ze, Ue, Ve, We, P, Q, R, Phi, Theta, Psi; if using latlong, XY = LatLong, Z = Alt above sea level
     int simEnd{5600}, simTimer{0};
     //Create and upload model

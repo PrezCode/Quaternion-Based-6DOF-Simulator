@@ -10,3 +10,4 @@ cmake_install.cmake
 Makefile
 *.svg
 matlab/Object_Simulation_Data.txt
+.vs

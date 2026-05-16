@@ -8,6 +8,7 @@
 #include <iostream>
 #include <string>
 #include "models/Model.hpp"
+#include <numbers>
 
 enum Variables
 {
@@ -392,25 +393,25 @@ private:
   }
   double wrapToPi(double angle)
   { // Force angle to be -pi < x < pi
-    while (angle > M_PI)
+    while (angle > std::numbers::pi)
     {
-      angle = angle - M_PI;
+      angle = angle - std::numbers::pi;
     }
-    while (angle < M_PI)
+    while (angle < std::numbers::pi)
     {
-      angle = angle + M_PI;
+      angle = angle + std::numbers::pi;
     }
     return angle;
   }
   double wrapTo2Pi(double angle)
   { // Force angle to be -2pi < x < 2pi
-    while (angle > 2 * M_PI)
+    while (angle > 2 * std::numbers::pi)
     {
-      angle = angle - 2 * M_PI;
+      angle = angle - 2 * std::numbers::pi;
     }
-    while (angle < 2 * M_PI)
+    while (angle < 2 * std::numbers::pi)
     {
-      angle = angle + 2 * M_PI;
+      angle = angle + 2 * std::numbers::pi;
     }
     return angle;
   }
